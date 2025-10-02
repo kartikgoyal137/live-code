@@ -5,37 +5,31 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"live-code/backend/ws"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+func handleSocket(hub *ws.Hub ,w http.ResponseWriter, r *http.Request) {
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
 
-func handleSocket(w http.ResponseWriter, r *http.Request) {
-	ws, err := upgrader.Upgrade(w, r , nil)
+	conn, err := upgrader.Upgrade(w, r , nil)
 	if err!=nil {
 		log.Println("upgrade error : ", err)
+		return
 	}
-	defer ws.Close()
 
 	log.Println("Client successfully connected...")
 
-	for {
-		messageType, p, err := ws.ReadMessage()
-		if err!=nil {
-			log.Println("read error : ", err)
-			break
-		}
+	client := &ws.Client{Hub: hub, Conn: conn, Send: make(chan []byte, 256)}
+	client.Hub.Register <- client
 
-		log.Printf("Recieved message : %s of type %v", p, messageType)
-
-		if err:=ws.WriteMessage(messageType, p); err!=nil {
-			log.Println("write error : ", err)
-			break
-		}
-	}
+	go client.WritePump()
+	go client.ReadPump()
 }
 
 func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +45,13 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	r := mux.NewRouter()
 
+	hub := ws.NewHub()
+	go hub.Run()
+
 	r.HandleFunc("/api/health", healthCheckHandler).Methods("GET")
-	r.HandleFunc("/ws", handleSocket)
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		handleSocket(hub , w , r)
+	})
 
 	port := ":8080"
 	log.Println("Server starting on PORT : ", port)
