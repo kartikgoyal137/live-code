@@ -6,9 +6,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"live-code/backend/ws"
+	"live-code/backend/docker"
 )
 
-func handleSocket(hub *ws.Hub ,w http.ResponseWriter, r *http.Request) {
+func handleSocket(hub *ws.Hub, manager *docker.Manager ,w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -25,7 +26,7 @@ func handleSocket(hub *ws.Hub ,w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Client successfully connected...")
 
-	client := &ws.Client{Hub: hub, Conn: conn, Send: make(chan []byte, 256)}
+	client := &ws.Client{Hub: hub, Manager: manager, Conn: conn, Send: make(chan []byte, 256)}
 	client.Hub.Register <- client
 
 	go client.WritePump()
@@ -44,13 +45,18 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	r := mux.NewRouter()
+	dockerManager, err := docker.NewManager()
+	if err!=nil {
+		log.Println("Failed to connect to Docker Daemon : ", err)
+		return
+	}
 
 	hub := ws.NewHub()
 	go hub.Run()
 
 	r.HandleFunc("/api/health", healthCheckHandler).Methods("GET")
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		handleSocket(hub , w , r)
+		handleSocket(hub , dockerManager, w , r)
 	})
 
 	port := ":8080"

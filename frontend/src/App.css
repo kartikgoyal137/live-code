@@ -1,42 +1,54 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* frontend/src/App.css */
+body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: sans-serif;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.app-container {
+  display: flex;
+  height: 100vh;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* For positioning the run button */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.output-container {
+  flex: 1;
+  padding: 0 20px;
+  background-color: #252526;
+  border-left: 1px solid #333;
+  overflow-y: auto;
 }
 
-.card {
-  padding: 2em;
+.run-button {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  z-index: 10;
+  padding: 8px 16px;
+  background-color: #0e639c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.run-button:hover {
+  background-color: #1177bb;
 }
 
-.read-the-docs {
-  color: #888;
+.output-content {
+  white-space: pre-wrap; /* Wrap long lines */
+  word-wrap: break-word;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.2em;
 }
